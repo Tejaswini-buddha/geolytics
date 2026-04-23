@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # CREATE APP FIRST
 app = FastAPI()
-
 # THEN ADD CORS
 app.add_middleware(
     CORSMiddleware,
@@ -22,6 +21,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 from app.services.pipeline import run_full_pipeline
 
 clf = None

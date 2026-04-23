@@ -9,22 +9,24 @@ export default function Analysis() {
   const [error, setError] = useState(null);
 
   const runAnalysis = async () => {
-    if (!keyword) return;
+  if (!keyword) return;
 
-    setLoading(true);
-    setError(null);
-    setResult(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      const res = await API.post(`/full-analysis?keyword=${keyword}`);
-      setResult(res.data);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch analysis. Check backend.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const res = await API.post("/full-analysis", {
+      keyword: keyword,
+    });
+
+    setResult(res.data);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to fetch analysis. Check backend.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="p-8 text-white">
