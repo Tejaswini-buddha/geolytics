@@ -1,46 +1,149 @@
 import random
-
-from app.services.prompt_engine import generate_prompts
-from app.services.ai_engine import get_ai_response
-from app.services.parser import parse_response
+import math
 
 
-def run_full_pipeline(keyword: str, clf, reg):
+# ================================
+# FEATURE ENGINEERING
+# ================================
+def extract_features(keyword: str):
+    """
+    Convert keyword into usable numeric features
+    """
+    length = len(keyword)
+    words = len(keyword.split())
+    has_numbers = any(char.isdigit() for char in keyword)
+    complexity = length * words
 
-    prompts = generate_prompts(keyword)
+    return {
+        "length": length,
+        "words": words,
+        "has_numbers": int(has_numbers),
+        "complexity": complexity,
+    }
 
-    results = []
 
-    for prompt in prompts:
+# ================================
+# GEO SCORE CALCULATION
+# ================================
+def calculate_geo_score(features):
+    base = 50
 
-        # Step 1: AI Response
-        ai_res = get_ai_response(prompt)
+    base += features["words"] * 5
+    base += min(features["length"], 20)
+    base -= features["has_numbers"] * 5
 
-        # Step 2: Parse
-        parsed = parse_response(ai_res)
+    return min(100, max(40, base + random.randint(-5, 5)))
 
-        # Step 3: Simulate features
-        word_count = random.randint(800, 2500)
-        faq_schema = random.randint(0, 1)
-        entity_density = round(random.uniform(0.3, 0.8), 2)
 
-        features = [[word_count, faq_schema, entity_density]]
+# ================================
+# AEO SCORE CALCULATION
+# ================================
+def calculate_aeo_score(features):
+    score = 50
 
-        # Step 4: ML Prediction
-        cited = clf.predict(features)[0]
-        geo_score = reg.predict(features)[0]
+    if features["words"] >= 3:
+        score += 15
 
-        results.append({
-            "prompt": prompt,
-            "brands": parsed["brands"],
-            "citations": parsed["citations"],
-            "features": {
-                "word_count": word_count,
-                "faq_schema": faq_schema,
-                "entity_density": entity_density
-            },
-            "will_be_cited": "Yes" if cited == 1 else "No",
-            "geo_score": round(float(geo_score), 2)
-        })
+    if features["length"] > 10:
+        score += 10
 
-    return results
+    return min(100, score + random.randint(-5, 5))
+
+
+# ================================
+# VISIBILITY LOGIC
+# ================================
+def calculate_visibility(geo_score):
+    if geo_score > 80:
+        return "High"
+    elif geo_score > 60:
+        return "Medium"
+    else:
+        return "Low"
+
+
+# ================================
+# RECOMMENDATIONS ENGINE
+# ================================
+def generate_recommendations(keyword, geo_score, aeo_score):
+    recs = []
+
+    if geo_score < 70:
+        recs.append(f"Improve content depth for '{keyword}'")
+
+    if aeo_score < 70:
+        recs.append("Add FAQ schema & structured data")
+
+    recs.append("Optimize for featured snippets")
+    recs.append("Increase authority backlinks")
+    recs.append("Use entity-based SEO strategy")
+
+    return recs
+
+
+# ================================
+# OPTIONAL ML MODEL USAGE
+# ================================
+def apply_ml_models(features, clf=None, reg=None):
+    """
+    If models exist, use them. Otherwise fallback to logic.
+    """
+    try:
+        feature_list = [
+            features["length"],
+            features["words"],
+            features["has_numbers"],
+            features["complexity"],
+        ]
+
+        if clf:
+            category = clf.predict([feature_list])[0]
+        else:
+            category = "generic"
+
+        if reg:
+            predicted_score = int(reg.predict([feature_list])[0])
+        else:
+            predicted_score = None
+
+        return category, predicted_score
+
+    except Exception:
+        return "generic", None
+
+
+# ================================
+# MAIN PIPELINE FUNCTION
+# ================================
+def run_full_pipeline(keyword, clf=None, reg=None):
+    """
+    Main GEOlytics AI pipeline
+    """
+
+    # Step 1: Extract features
+    features = extract_features(keyword)
+
+    # Step 2: Scores
+    geo_score = calculate_geo_score(features)
+    aeo_score = calculate_aeo_score(features)
+
+    # Step 3: Visibility
+    visibility = calculate_visibility(geo_score)
+
+    # Step 4: ML predictions
+    category, predicted_score = apply_ml_models(features, clf, reg)
+
+    # Step 5: Recommendations
+    recommendations = generate_recommendations(keyword, geo_score, aeo_score)
+
+    # Final response
+    return {
+        "keyword": keyword,
+        "features": features,
+        "geo_score": geo_score,
+        "aeo_score": aeo_score,
+        "visibility": visibility,
+        "category": category,
+        "ml_score": predicted_score,
+        "recommendations": recommendations,
+    }

@@ -15,9 +15,7 @@ export default function Analysis() {
   setError(null);
 
   try {
-    const res = await API.post("/full-analysis", {
-      keyword: keyword,
-    });
+    const res = await API.post(`/full-analysis?keyword=${keyword}`);
 
     setResult(res.data);
   } catch (err) {
