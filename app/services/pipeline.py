@@ -124,8 +124,10 @@ def run_full_pipeline(keyword, clf=None, reg=None):
     features = extract_features(keyword)
 
     # Step 2: Scores
-    geo_score = calculate_geo_score(features)
-    aeo_score = calculate_aeo_score(features)
+    geo_score = 50 + features["words"] * 6 + features["length"] * 1.2
+    geo_score = int(min(100, geo_score))
+    aeo_score = 45 + features["words"] * 8
+    aeo_score = int(min(100, aeo_score))
 
     # Step 3: Visibility
     visibility = calculate_visibility(geo_score)
