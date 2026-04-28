@@ -6,14 +6,32 @@ import math
 # FEATURE ENGINEERING (FIXED)
 # ================================
 def extract_features(keyword):
-    words = len(keyword.split())
-    length = len(keyword)
+    words = keyword.split()
 
     return {
-        "length": length,
-        "words": words,
-        "has_numbers": any(char.isdigit() for char in keyword),
-        "complexity": math.log(length + 1),
+        "length": len(keyword),
+        "words": len(words),
+        "has_numbers": any(c.isdigit() for c in keyword),
+        "complexity": len(set(words)),
+    }
+
+# ===============================
+def run_full_pipeline(keyword):
+    features = extract_features(keyword)
+
+    geo_score = calculate_geo_score(features)
+    aeo_score = calculate_aeo_score(features)
+
+    visibility = calculate_visibility(geo_score)
+
+    recommendations = generate_recommendations(keyword, geo_score, aeo_score)
+
+    return {
+        "keyword": keyword,
+        "geo_score": geo_score,
+        "aeo_score": aeo_score,
+        "visibility": visibility,
+        "recommendations": recommendations,
     }
 
 

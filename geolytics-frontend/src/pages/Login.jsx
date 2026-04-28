@@ -10,6 +10,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const login = async () => {
+  const res = await API.post("/login", { email, password });
+
+  localStorage.setItem("user", JSON.stringify(res.data));
+  };
+
+
   const handleLogin = async () => {
     try {
       const res = await API.post("/login", {

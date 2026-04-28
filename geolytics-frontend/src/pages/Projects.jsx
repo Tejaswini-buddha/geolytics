@@ -14,6 +14,17 @@ const res=await getProjects();
 setProjects(res.data);
 }
 
+const [projects, setProjects] = useState([]);
+
+useEffect(() => {
+  API.get("/projects").then(res => setProjects(res.data));
+  }, []);
+
+const createProject = async () => {
+  await API.post("/project", { name });
+  window.location.reload();
+  };
+
 return(
 <div>
 <h1>Projects</h1>

@@ -11,6 +11,11 @@ export default function Analysis() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+
+useEffect(() => {
+  API.get("/prompt-history").then(res => setHistory(res.data));
+}, []);
 
   // ---------------- FETCH HISTORY ----------------
   const fetchHistory = async () => {
@@ -53,6 +58,19 @@ export default function Analysis() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const runAnalysis = async () => {
+  setLoading(true);
+
+  try {
+    const res = await API.post("/full-analysis", { keyword });
+    setResult(res.data);
+    } catch (err) {
+    console.error(err);
+   }
+
+  setLoading(false);
   };
 
   // ---------------- INITIAL LOAD ----------------

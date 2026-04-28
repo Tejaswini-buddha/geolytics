@@ -168,26 +168,29 @@ def get_projects(db: Session = Depends(get_db)):
 # ================================
 # FULL ANALYSIS (IMPORTANT API)
 # ================================
-import random
+from app.services.pipeline import run_full_pipeline
+from app.models.prompt_log import PromptLog
+from app.database import SessionLocal
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
 
 @app.post("/full-analysis")
-def full_analysis(keyword: str):
+def full_analysis(keyword: str, db: Session = Depends(SessionLocal)):
 
-    geo = random.randint(60, 95)
-    aeo = random.randint(55, 90)
-    visibility = random.choice(["Low", "Medium", "High"])
+    result = run_full_pipeline(keyword)
 
-    return {
-        "keyword": keyword,
-        "geo_score": geo,
-        "aeo_score": aeo,
-        "visibility": visibility,
-        "recommendations": [
-            f"Improve {keyword} content",
-            f"Add structured data for {keyword}",
-            f"Increase authority pages for {keyword}"
-        ]
-    }
+    log = PromptLog(
+        keyword=keyword,
+        geo_score=result["geo_score"],
+        aeo_score=result["aeo_score"],
+        visibility=result["visibility"]
+    )
+
+    db.add(log)
+    db.commit()
+
+    return result
 
 # ================================
 # DASHBOARD DATA
@@ -280,21 +283,30 @@ def prompt_history(db: Session = Depends(get_db)):
     ]
 
 # ================================
+from pydantic import BaseModel
+
+class AnalysisRequest(BaseModel):
+    keyword: str
+    project_id: int
+
+
 @app.post("/full-analysis")
-def full_analysis(keyword: str, project_id: int, db: Session = Depends(get_db)):
+def full_analysis(data: AnalysisRequest, db: Session = Depends(get_db)):
+
+    keyword = data.keyword
+    project_id = data.project_id
 
     result = run_full_pipeline(keyword)
 
-    new_analysis = Analysis(
+    log = PromptLog(
         keyword=keyword,
-        project_id=project_id,
         geo_score=result["geo_score"],
         aeo_score=result["aeo_score"],
-        visibility=result["visibility"]
+        visibility=result["visibility"],
+        project_id=project_id
     )
 
-    db.add(new_analysis)
+    db.add(log)
     db.commit()
-    db.refresh(new_analysis)
 
     return result

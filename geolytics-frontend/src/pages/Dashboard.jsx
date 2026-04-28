@@ -4,29 +4,6 @@ import API from "../api";
 import KPI from "../components/KPI";
 import Chart from "../components/Chart";
 
-import {
-LineChart,
-Line,
-XAxis,
-YAxis,
-Tooltip
-} from "recharts";
-
-const data=[
-{month:"Jan",score:63},
-{month:"Feb",score:69},
-{month:"Mar",score:73},
-{month:"Apr",score:81},
-{month:"May",score:88}
-];
-
-<LineChart width={900} height={400} data={data}>
-<XAxis dataKey="month"/>
-<YAxis/>
-<Tooltip/>
-<Line dataKey="score"/>
-</LineChart>
-
 export default function Dashboard() {
   const [data, setData] = useState({
     kpis: {
@@ -36,102 +13,93 @@ export default function Dashboard() {
       citation_visibility: 0,
     },
     citation_trend: [],
+    insights: "",
+    recommendation: "",
   });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // -----------------------------------------
-  // Fetch Dashboard Data
-  // -----------------------------------------
+  // Convert visibility text → numeric
+  const visibilityToScore = (v) => {
+    if (v === "High") return 90;
+    if (v === "Medium") return 65;
+    return 40;
+  };
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        setError("");
 
         const res = await API.get("/analysis-history");
-
         const history = res.data || [];
 
-        // If backend returns history array, compute KPIs dynamically
-        if (history.length > 0) {
-          const avgGeo =
-            data.reduce(
-              (acc, d) => acc + (d.geo_score || 0),
-              0
-            )  / data.length || 0;
-
-          const avgAeo =
-            history.reduce(
-              (acc, item) => acc + Number(item.aeo_score || 0),
-              0
-            ) / history.length;
-
-          const avgVisibility =
-            history.reduce(
-              (acc, item) => acc + Number(item.visibility || 75),
-              0
-            ) / history.length;
-
-          const trend = history.slice(-6).map((item, index) => ({
-            month: item.month || `M${index + 1}`,
-            score: item.geo_score || 0,
-          }));
-
-          setData({
-            kpis: {
-              geo_score: Math.round(avgGeo),
-              aeo_score: Math.round(avgAeo),
-              brand_influence: Math.round(avgGeo + 5),
-              citation_visibility: Math.round(avgVisibility),
-            },
-            citation_trend: trend,
-          });
+        if (history.length === 0) {
+          setError("No analysis data yet. Run analysis first.");
+          return;
         }
 
-        // Fallback demo data if backend empty
-        else {
-          setData({
-            kpis: {
-              geo_score: 82,
-              aeo_score: 78,
-              brand_influence: 85,
-              citation_visibility: 76,
-            },
-            citation_trend: [
-              { month: "Jan", score: 60 },
-              { month: "Feb", score: 65 },
-              { month: "Mar", score: 70 },
-              { month: "Apr", score: 75 },
-              { month: "May", score: 80 },
-              { month: "Jun", score: 85 },
-            ],
-          });
+        // -------------------------
+        // KPI CALCULATION
+        // -------------------------
+        const avgGeo =
+          history.reduce((acc, i) => acc + (i.geo_score || 0), 0) /
+          history.length;
+
+        const avgAeo =
+          history.reduce((acc, i) => acc + (i.aeo_score || 0), 0) /
+          history.length;
+
+        const avgVisibility =
+          history.reduce(
+            (acc, i) => acc + visibilityToScore(i.visibility),
+            0
+          ) / history.length;
+
+        // -------------------------
+        // TREND DATA
+        // -------------------------
+        const trend = history.slice(-6).map((item, index) => ({
+          month: `K${index + 1}`,
+          score: item.geo_score || 0,
+        }));
+
+        // -------------------------
+        // AI INSIGHT GENERATION
+        // -------------------------
+        let insight = "";
+        let recommendation = "";
+
+        if (avgGeo > 80) {
+          insight = "Your GEO performance is strong and improving.";
+          recommendation = "Focus on scaling authority content and backlinks.";
+        } else if (avgGeo > 60) {
+          insight = "Your GEO performance is moderate.";
+          recommendation = "Improve structured data and semantic SEO.";
+        } else {
+          insight = "Your GEO performance is low.";
+          recommendation = "Optimize content depth and answer intent better.";
         }
 
-      } catch (err) {
-        console.error("Dashboard Error:", err);
-
-        setError("Failed to load dashboard.");
-
-        // fallback if API fails
+        // -------------------------
+        // FINAL STATE
+        // -------------------------
         setData({
           kpis: {
-            geo_score: 82,
-            aeo_score: 78,
-            brand_influence: 85,
-            citation_visibility: 76,
+            geo_score: Math.round(avgGeo),
+            aeo_score: Math.round(avgAeo),
+            brand_influence: Math.round(avgGeo + 5),
+            citation_visibility: Math.round(avgVisibility),
           },
-          citation_trend: [
-            { month: "Jan", score: 60 },
-            { month: "Feb", score: 65 },
-            { month: "Mar", score: 70 },
-            { month: "Apr", score: 75 },
-            { month: "May", score: 80 },
-          ],
+          citation_trend: trend,
+          insights: insight,
+          recommendation: recommendation,
         });
 
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load dashboard.");
       } finally {
         setLoading(false);
       }
@@ -140,127 +108,44 @@ export default function Dashboard() {
     fetchDashboard();
   }, []);
 
-  // -----------------------------------------
-  // Loading State
-  // -----------------------------------------
   if (loading) {
-    return (
-      <div className="p-8 text-gray-400 animate-pulse">
-        Loading dashboard...
-      </div>
-    );
+    return <div className="p-8 text-gray-400">Loading dashboard...</div>;
   }
 
   return (
     <div className="p-8 text-white min-h-screen">
 
-      {/* Title */}
       <h1 className="text-4xl font-bold mb-8 text-orange-400">
         GEOlytics Dashboard
       </h1>
 
-      {/* Error */}
-      {error && (
-        <div className="mb-6 text-red-400">
-          {error}
-        </div>
-      )}
+      {error && <div className="text-red-400 mb-6">{error}</div>}
 
-      {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-
-        <KPI
-          title="GEO Score"
-          value={`${data.kpis.geo_score}%`}
-        />
-
-        <KPI
-          title="AEO Score"
-          value={`${data.kpis.aeo_score}%`}
-        />
-
-        <KPI
-          title="Brand Influence"
-          value={`${data.kpis.brand_influence}%`}
-        />
-
-        <KPI
-          title="Visibility"
-          value={`${data.kpis.citation_visibility}%`}
-        />
-
+      {/* KPIs */}
+      <div className="grid md:grid-cols-4 gap-6 mb-10">
+        <KPI title="GEO Score" value={`${data.kpis.geo_score}%`} />
+        <KPI title="AEO Score" value={`${data.kpis.aeo_score}%`} />
+        <KPI title="Brand Influence" value={`${data.kpis.brand_influence}%`} />
+        <KPI title="Visibility" value={`${data.kpis.citation_visibility}%`} />
       </div>
 
-      {/* Citation Trend Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="
-          bg-white/5
-          backdrop-blur-xl
-          border border-white/10
-          p-6
-          rounded-2xl
-          shadow-lg
-        "
-      >
-        <h2 className="text-xl font-semibold mb-6 text-gray-300">
-          Citation Trend
-        </h2>
-
+      {/* Chart */}
+      <motion.div className="bg-white/5 p-6 rounded-2xl">
+        <h2 className="mb-4 text-gray-300">Citation Trend</h2>
         <Chart data={data.citation_trend} />
       </motion.div>
 
-      {/* Insights Section */}
+      {/* AI Insights */}
       <div className="grid md:grid-cols-2 gap-6 mt-10">
 
-        {/* Insight Card */}
-        <div
-          className="
-            bg-white/5
-            backdrop-blur-xl
-            border border-white/10
-            p-6
-            rounded-2xl
-            shadow-lg
-          "
-        >
-          <h2 className="text-gray-400 text-sm mb-3">
-            Top Insight
-          </h2>
-
-          <p className="text-lg font-semibold">
-            Your brand visibility is increasing steadily 📈
-          </p>
-
-          <p className="text-gray-400 mt-3">
-            GEO performance improved based on recent citation trends.
-          </p>
+        <div className="bg-white/5 p-6 rounded-2xl">
+          <h3 className="text-gray-400 mb-2">AI Insight</h3>
+          <p className="text-lg">{data.insights}</p>
         </div>
 
-        {/* Recommendation Card */}
-        <div
-          className="
-            bg-white/5
-            backdrop-blur-xl
-            border border-white/10
-            p-6
-            rounded-2xl
-            shadow-lg
-          "
-        >
-          <h2 className="text-gray-400 text-sm mb-3">
-            Recommendation
-          </h2>
-
-          <p className="text-lg font-semibold">
-            Improve structured data for better AI citations
-          </p>
-
-          <p className="text-gray-400 mt-3">
-            Focus on schema markup, citations and answer-engine optimization.
-          </p>
+        <div className="bg-white/5 p-6 rounded-2xl">
+          <h3 className="text-gray-400 mb-2">Recommendation</h3>
+          <p className="text-lg">{data.recommendation}</p>
         </div>
 
       </div>
