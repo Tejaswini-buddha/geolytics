@@ -12,7 +12,7 @@ from app.models.project import Project
 from app.models.user import User
 from app.models.prompt_log import PromptLog
 from app.services.pipeline import run_full_pipeline
-
+from fastapi.middleware.cors import CORSMiddleware
 
 # ================================
 # CREATE APP (ONLY ONCE)
@@ -26,13 +26,14 @@ app = FastAPI(
 # CORS (VERY IMPORTANT)
 # ================================
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # allow frontend
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+CORSMiddleware,
+allow_origins=[
+"https://geolytics-pearl.vercel.app"
+],
+allow_credentials=True,
+allow_methods=["*"],
+allow_headers=["*"],
 )
-
 # ================================
 # LOAD MODELS
 # ================================

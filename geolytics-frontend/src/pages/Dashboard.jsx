@@ -4,6 +4,29 @@ import API from "../api";
 import KPI from "../components/KPI";
 import Chart from "../components/Chart";
 
+import {
+LineChart,
+Line,
+XAxis,
+YAxis,
+Tooltip
+} from "recharts";
+
+const data=[
+{month:"Jan",score:63},
+{month:"Feb",score:69},
+{month:"Mar",score:73},
+{month:"Apr",score:81},
+{month:"May",score:88}
+];
+
+<LineChart width={900} height={400} data={data}>
+<XAxis dataKey="month"/>
+<YAxis/>
+<Tooltip/>
+<Line dataKey="score"/>
+</LineChart>
+
 export default function Dashboard() {
   const [data, setData] = useState({
     kpis: {
