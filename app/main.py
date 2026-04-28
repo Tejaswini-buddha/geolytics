@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, SessionLocal
+from app.models.analysis import Analysis
 from app.models.project import Project
 from app.models.user import User
 from app.models.prompt_log import PromptLog
@@ -277,3 +278,22 @@ def prompt_history(db: Session = Depends(get_db)):
         for r in rows
     ]
 
+# ================================
+@app.post("/full-analysis")
+def full_analysis(keyword: str, project_id: int, db: Session = Depends(get_db)):
+
+    result = run_full_pipeline(keyword)
+
+    new_analysis = Analysis(
+        keyword=keyword,
+        project_id=project_id,
+        geo_score=result["geo_score"],
+        aeo_score=result["aeo_score"],
+        visibility=result["visibility"]
+    )
+
+    db.add(new_analysis)
+    db.commit()
+    db.refresh(new_analysis)
+
+    return result

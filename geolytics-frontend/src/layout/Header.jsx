@@ -1,22 +1,27 @@
-import { Search, Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Header() {
+  const navigate = useNavigate();
+
+  const logout = () => {
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   return (
     <div className="flex justify-between items-center bg-gray-900 px-6 py-4 border-b border-gray-800">
 
-      <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-lg w-80">
-        <Search size={16} className="text-gray-400" />
-        <input
-          placeholder="Search..."
-          className="bg-transparent outline-none text-white w-full"
-        />
-      </div>
+      <h1 className="text-xl font-bold text-orange-500">
+        GEOlytics
+      </h1>
 
       <div className="flex items-center gap-4">
-        <Bell className="text-gray-400" />
-        <div className="bg-orange-500 w-8 h-8 rounded-full flex items-center justify-center font-bold">
-          T
-        </div>
+        <button
+          onClick={logout}
+          className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+        >
+          Logout
+        </button>
       </div>
 
     </div>

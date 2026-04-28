@@ -3,22 +3,17 @@ import math
 
 
 # ================================
-# FEATURE ENGINEERING
+# FEATURE ENGINEERING (FIXED)
 # ================================
-def extract_features(keyword: str):
-    """
-    Convert keyword into usable numeric features
-    """
-    length = len(keyword)
+def extract_features(keyword):
     words = len(keyword.split())
-    has_numbers = any(char.isdigit() for char in keyword)
-    complexity = length * words
+    length = len(keyword)
 
     return {
         "length": length,
         "words": words,
-        "has_numbers": int(has_numbers),
-        "complexity": complexity,
+        "has_numbers": any(char.isdigit() for char in keyword),
+        "complexity": math.log(length + 1),
     }
 
 
@@ -85,9 +80,6 @@ def generate_recommendations(keyword, geo_score, aeo_score):
 # OPTIONAL ML MODEL USAGE
 # ================================
 def apply_ml_models(features, clf=None, reg=None):
-    """
-    If models exist, use them. Otherwise fallback to logic.
-    """
     try:
         feature_list = [
             features["length"],
@@ -96,15 +88,8 @@ def apply_ml_models(features, clf=None, reg=None):
             features["complexity"],
         ]
 
-        if clf:
-            category = clf.predict([feature_list])[0]
-        else:
-            category = "generic"
-
-        if reg:
-            predicted_score = int(reg.predict([feature_list])[0])
-        else:
-            predicted_score = None
+        category = clf.predict([feature_list])[0] if clf else "generic"
+        predicted_score = int(reg.predict([feature_list])[0]) if reg else None
 
         return category, predicted_score
 
@@ -113,39 +98,36 @@ def apply_ml_models(features, clf=None, reg=None):
 
 
 # ================================
-# MAIN PIPELINE FUNCTION
+# FINAL PIPELINE (FIXED)
 # ================================
 def run_full_pipeline(keyword, clf=None, reg=None):
     """
-    Main GEOlytics AI pipeline
+    GEOlytics AI Pipeline (clean + working)
     """
 
-    # Step 1: Extract features
+    # Step 1: Feature Extraction
     features = extract_features(keyword)
 
-    # Step 2: Scores
-    geo_score = 50 + features["words"] * 6 + features["length"] * 1.2
-    geo_score = int(min(100, geo_score))
-    aeo_score = 45 + features["words"] * 8
-    aeo_score = int(min(100, aeo_score))
+    # Step 2: Score Calculation
+    geo_score = calculate_geo_score(features)
+    aeo_score = calculate_aeo_score(features)
 
     # Step 3: Visibility
     visibility = calculate_visibility(geo_score)
 
-    # Step 4: ML predictions
+    # Step 4: ML (optional)
     category, predicted_score = apply_ml_models(features, clf, reg)
 
     # Step 5: Recommendations
     recommendations = generate_recommendations(keyword, geo_score, aeo_score)
 
-    # Final response
+    # Final Output
     return {
         "keyword": keyword,
-        "features": features,
         "geo_score": geo_score,
         "aeo_score": aeo_score,
         "visibility": visibility,
-        "category": category,
-        "ml_score": predicted_score,
         "recommendations": recommendations,
+        "category": category,
+        "predicted_score": predicted_score,
     }
