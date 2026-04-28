@@ -1,7 +1,21 @@
+# Python
 __pycache__/
 *.pyc
+*.pyo
 venv/
 .venv/
 .env
+
+# Database
 geolytics.db
+
+# React
 node_modules/
+dist/
+build/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
