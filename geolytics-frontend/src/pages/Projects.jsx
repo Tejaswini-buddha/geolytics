@@ -1,42 +1,58 @@
-import {useEffect,useState} from "react";
-import {getProjects} from "../api";
+import { useEffect, useState } from "react";
+import API from "../api";
 
-export default function Projects(){
+export default function Projects() {
+  const [projects, setProjects] = useState([]);
+  const [name, setName] = useState("");
 
-const [projects,setProjects]=useState([]);
-
-useEffect(()=>{
-loadProjects();
-},[]);
-
-const loadProjects=async()=>{
-const res=await getProjects();
-setProjects(res.data);
-}
-
-const [projects, setProjects] = useState([]);
-
-useEffect(() => {
-  API.get("/projects").then(res => setProjects(res.data));
-  }, []);
-
-const createProject = async () => {
-  await API.post("/project", { name });
-  window.location.reload();
+  const fetchProjects = async () => {
+    try {
+      const res = await API.get("/projects");
+      setProjects(res.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-return(
-<div>
-<h1>Projects</h1>
+  const createProject = async () => {
+    if (!name) return;
 
-{projects.map(p=>(
-<div key={p.id}>
-<h3>{p.name}</h3>
-<p>{p.domain}</p>
-</div>
-))}
+    try {
+      await API.post("/project", { name });
+      setName("");
+      fetchProjects();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-</div>
-)
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
+  return (
+    <div className="p-8 text-white">
+      <h1 className="text-3xl mb-6">Projects</h1>
+
+      <div className="flex gap-3 mb-6">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="New project name"
+          className="p-2 rounded bg-gray-800"
+        />
+        <button onClick={createProject} className="bg-orange-500 px-4 rounded">
+          Create
+        </button>
+      </div>
+
+      <div>
+        {projects.map((p) => (
+          <div key={p.id} className="mb-2">
+            {p.name}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

@@ -23,5 +23,19 @@ export const competitorCompare=(domain, competitor)=>
  API.post(
 `/competitor-comparison?domain=${domain}&competitor=${competitor}`
 );
+const handleLogin = async () => {
+  try {
+    const res = await API.post("/login", { email, password });
+
+    console.log("LOGIN OK:", res.data); // 👈
+
+    localStorage.setItem("user", JSON.stringify(res.data));
+    navigate("/dashboard");
+
+    } catch (err) {
+    console.error("LOGIN ERROR:", err?.response || err); // 👈
+    alert("Login failed");
+    }
+  };
 
 export default API;
