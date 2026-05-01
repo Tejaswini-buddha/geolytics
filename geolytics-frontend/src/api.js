@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
- baseURL: import.meta.env.VITE_API_URL,
+ baseURL: "https://geolytics-y3j9.onrender.com",
  headers:{
    "Content-Type":"application/json"
  }
@@ -27,13 +27,13 @@ const handleLogin = async () => {
   try {
     const res = await API.post("/login", { email, password });
 
-    console.log("LOGIN OK:", res.data); // 👈
+    console.log("LOGIN OK:", res.data); 
 
     localStorage.setItem("user", JSON.stringify(res.data));
     navigate("/dashboard");
 
     } catch (err) {
-    console.error("LOGIN ERROR:", err?.response || err); // 👈
+    console.error("LOGIN ERROR:", err?.response || err); 
     alert("Login failed");
     }
   };

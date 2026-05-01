@@ -4,30 +4,31 @@ import API from "../api";
 export default function Analysis() {
   const [keyword, setKeyword] = useState("");
   const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   // 🔹 Run Analysis
   const runAnalysis = async () => {
-    if (!keyword) return;
+    if (!keyword) {
+      setError("Please enter a keyword");
+      return;
+    }
 
     try {
       setLoading(true);
       setError("");
 
       const res = await API.post("/full-analysis", {
-        keyword,
-        project_id: 1, // you can later make dynamic
+        keyword: keyword,
+        project_id: 1,
       });
 
       setResult(res.data);
 
-      // refresh history after new run
-      fetchHistory();
     } catch (err) {
-      console.error(err);
-      setError("Failed to fetch analysis. Check backend.");
+      console.error("Analysis Error:", err);
+      setError("Backend not responding or invalid request.");
     } finally {
       setLoading(false);
     }
@@ -49,6 +50,7 @@ export default function Analysis() {
 
   return (
     <div className="p-8 text-white">
+
       {/* HEADER */}
       <h1 className="text-3xl font-bold mb-6 text-orange-500">
         GEO Analysis Engine
@@ -59,12 +61,13 @@ export default function Analysis() {
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="Enter keyword (e.g. SEO tools)"
+          placeholder="Enter keyword (SEO tools, AI marketing...)"
           className="p-3 rounded bg-gray-800 w-80"
         />
+
         <button
           onClick={runAnalysis}
-          className="bg-orange-500 px-6 py-2 rounded"
+          className="bg-orange-500 px-6 py-2 rounded hover:bg-orange-600"
         >
           {loading ? "Running..." : "Run Analysis"}
         </button>
@@ -76,33 +79,41 @@ export default function Analysis() {
       {/* RESULT */}
       {result && (
         <div className="grid grid-cols-2 gap-6 mb-8">
+
+          {/* GEO Score */}
           <div className="bg-gray-800 p-4 rounded">
-            <h2>GEO Score</h2>
-            <p className="text-3xl text-orange-400">
+            <h2 className="text-gray-400">GEO Score</h2>
+            <p className="text-4xl text-orange-400 font-bold">
               {result.geo_score}
             </p>
           </div>
 
+          {/* AEO Score */}
           <div className="bg-gray-800 p-4 rounded">
-            <h2>AEO Score</h2>
-            <p className="text-3xl text-orange-400">
+            <h2 className="text-gray-400">AEO Score</h2>
+            <p className="text-4xl text-orange-400 font-bold">
               {result.aeo_score}
             </p>
           </div>
 
+          {/* Visibility */}
           <div className="bg-gray-800 p-4 rounded">
-            <h2>Visibility</h2>
-            <p className="text-xl">{result.visibility}</p>
+            <h2 className="text-gray-400">Visibility</h2>
+            <p className="text-xl">
+              {result.visibility}
+            </p>
           </div>
 
+          {/* Recommendations */}
           <div className="bg-gray-800 p-4 rounded">
-            <h2>Recommendations</h2>
+            <h2 className="text-gray-400">Recommendations</h2>
             <ul className="list-disc pl-5">
-              {result.recommendations.map((rec, i) => (
+              {result.recommendations?.map((rec, i) => (
                 <li key={i}>{rec}</li>
               ))}
             </ul>
           </div>
+
         </div>
       )}
 
@@ -114,10 +125,7 @@ export default function Analysis() {
           <p>No history yet</p>
         ) : (
           history.map((h) => (
-            <div
-              key={h.id}
-              className="border-b border-gray-700 py-2"
-            >
+            <div key={h.id} className="border-b border-gray-700 py-2">
               <p className="font-bold">{h.keyword}</p>
               <p>
                 GEO: {h.geo_score} | AEO: {h.aeo_score}
@@ -126,6 +134,7 @@ export default function Analysis() {
           ))
         )}
       </div>
+
     </div>
   );
 }
