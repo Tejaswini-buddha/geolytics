@@ -1,8 +1,7 @@
 import pickle
 import os
 
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -13,28 +12,23 @@ from app.models.user import User
 from app.models.prompt_log import PromptLog
 from app.services.pipeline import run_full_pipeline
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# ================================
-# CREATE APP (ONLY ONCE)
-# ================================
-app = FastAPI(
-    title="GEOlytics API",
-    version="0.1.0"
-)
+app = FastAPI()
 
-# ================================
-# CORS (VERY IMPORTANT)
-# ================================
+origins = [
+    "http://localhost:5174",
+    "http://localhost:5173",
+    "https://geolytics-pearl.vercel.app",
+]
+
 app.add_middleware(
-CORSMiddleware,
-allow_origins=[
-"https://geolytics-pearl.vercel.app",
-"http://localhost:5173",
-"http://localhost:5174",
-],
-allow_credentials=True,
-allow_methods=["*"],
-allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 # ================================
 # LOAD MODELS
